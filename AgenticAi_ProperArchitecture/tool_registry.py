@@ -1,12 +1,9 @@
-from tools import calculator
-from tools import hello
+from tools import software
 
 TOOLS = {
-    "open_calculator": calculator.execute,
-    "hello_world": hello.execute,
+    "open_software": software.execute
 }
 
 SCHEMAS = [
-    calculator.schema,
-    hello.schema
+    software.schema
 ]
