@@ -32,7 +32,10 @@ SOFTWARES = {
     "microsoft edge": "msedge.exe",
 
     # Blender
-    "blender": r"D:\Blender\blender-launcher.exe"
+    "blender": r"D:\Blender\blender-launcher.exe",
+
+    #spotify
+    "spotify":"spotify.exe"
 }
 
 # Automatically generate the supported application list
