@@ -1,42 +1,108 @@
-from dotenv import load_dotenv;
-import os
+from dotenv import load_dotenv
 from openai import OpenAI
-from agents import Agent
-load_dotenv() 
+import subprocess
+import os
 
-
-
-key=os.getenv("API")
-
-
-
-
-
+# ----------------------------
+# Load API Key
+# ----------------------------
+load_dotenv()
 
 client = OpenAI(
-    api_key=key,
-    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("API"),
+    base_url="https://openrouter.ai/api/v1"
 )
 
-# Conversation history
+# ----------------------------
+# TOOLS
+# ----------------------------
+
+def print_hello():
+    print("\n>>> Hello World <<<")
+    return "Hello World tool executed."
+
+def open_calculator():
+    subprocess.Popen("calc.exe")
+    return "Calculator opened successfully."
+
+# Tool Dictionary
+tools = {
+    "hello_world": print_hello,
+    "open_calculator": open_calculator
+}
+
+# ----------------------------
+# SYSTEM PROMPT
+# ----------------------------
+
 messages = [
     {
         "role": "system",
-        "content": "You are a helpful AI assistant."
+        "content": """
+You are an AI Agent.
+
+You have access to the following tools.
+
+-------------------------------------------------
+
+Tool Name: hello_world
+
+Description:
+Prints Hello World.
+
+If the user wants to:
+- call hello world
+- run hello world
+- execute hello world
+
+Return EXACTLY
+
+TOOL: hello_world
+
+-------------------------------------------------
+
+Tool Name: open_calculator
+
+Description:
+Opens the Windows Calculator.
+
+If the user wants to:
+- open calculator
+- launch calculator
+- start calculator
+- open calc
+
+Return EXACTLY
+
+TOOL: open_calculator
+
+-------------------------------------------------
+
+For ALL OTHER requests answer normally.
+
+NEVER explain a tool call.
+
+If a tool is needed, your ENTIRE response must contain ONLY:
+
+TOOL: tool_name
+"""
     }
 ]
 
-print("AI Chatbot")
+print("========== AI AGENT ==========")
 print("Type 'exit' to quit.\n")
 
+# ----------------------------
+# MAIN LOOP
+# ----------------------------
+
 while True:
+
     user_input = input("You: ")
 
     if user_input.lower() in ["exit", "quit"]:
-        print("Goodbye!")
         break
 
-    # Add user's message
     messages.append(
         {
             "role": "user",
@@ -45,28 +111,65 @@ while True:
     )
 
     try:
+
         response = client.chat.completions.create(
             model="openrouter/free",
-            messages=messages,
+            messages=messages
         )
 
-        assistant_reply = response.choices[0].message.content
+        assistant_reply = response.choices[0].message.content.strip()
 
-        print(f"\nAI: {assistant_reply}\n")
+        print("\nRAW MODEL OUTPUT:")
+        print(assistant_reply)
 
-        # Save assistant response for future context
-        messages = [
-    {
-        "role": "system",
-        "content": """
-You are a world-class Senior Software Engineer,
- Computer Science mentor, and Technical Architect with 
- over 20 years of experience building production-scale software.
-Your goal is to produce engineers who understand the "why",
- not developers who copy and paste code.
-"""
-    }
-        ]
+        # ----------------------------
+        # TOOL DETECTION
+        # ----------------------------
+
+        if "TOOL:" in assistant_reply:
+
+            tool_name = assistant_reply.split("TOOL:")[1].strip()
+
+            if tool_name in tools:
+
+                print(f"\nExecuting Tool: {tool_name}\n")
+
+                result = tools[tool_name]()
+
+                print(result)
+
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": assistant_reply
+                    }
+                )
+
+                messages.append(
+                    {
+                        "role": "tool",
+                        "content": result
+                    }
+                )
+
+                continue
+
+            else:
+                print("Unknown Tool:", tool_name)
+                continue
+
+        # ----------------------------
+        # NORMAL RESPONSE
+        # ----------------------------
+
+        print("\nAI:", assistant_reply, "\n")
+
+        messages.append(
+            {
+                "role": "assistant",
+                "content": assistant_reply
+            }
+        )
 
     except Exception as e:
-        print("Error:", e)
+        print("ERROR:", e)
