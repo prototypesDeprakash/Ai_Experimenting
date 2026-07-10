@@ -12,4 +12,5 @@ venv/
 # VS Code settings (optional)
 .vscode/
 
-.json/
+# Long-term memory (personal data, don't commit)
+long_term_memory.json
