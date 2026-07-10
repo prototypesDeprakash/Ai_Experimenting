@@ -12,3 +12,4 @@ venv/
 # VS Code settings (optional)
 .vscode/
 
+.json/
