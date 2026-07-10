@@ -78,7 +78,6 @@ For example:
 # -------------------------------------------------
 # Tool Execution
 # -------------------------------------------------
-
 def execute(application_name):
 
     application_name = application_name.lower().strip()
@@ -92,8 +91,10 @@ def execute(application_name):
         )
 
     try:
-        subprocess.Popen(app)
+        subprocess.Popen([app])   # <-- wrapped in a list
         return f"{application_name} opened successfully."
 
+    except FileNotFoundError:
+        return f"{application_name} path not found on this machine: {app}"
     except Exception as e:
         return f"Failed to open {application_name}: {e}"
