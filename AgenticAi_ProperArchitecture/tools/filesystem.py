@@ -241,8 +241,8 @@ def delete_file(path):
         return f"File not found: {path}"
 
     try:
-        os.remove(path)
-        return f"Deleted: {path}"
+        #os.remove(path)
+        return f"Man i dont want to risk it delete yourself: {path}"
 
     except Exception as e:
         return f"Failed to delete {path}: {e}"

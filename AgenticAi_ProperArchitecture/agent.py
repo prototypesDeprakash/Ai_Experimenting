@@ -5,6 +5,8 @@ from llm import chat, extract_facts
 from tool_registry import TOOLS, SCHEMAS
 import memory_store
 
+MAX_TOOL_ITERATIONS = 8  # safety cap so a confused model can't loop forever
+
 
 class Agent:
 
@@ -15,82 +17,74 @@ class Agent:
             "content": text
         })
 
-        response = chat(messages, SCHEMAS)
-        message = response.choices[0].message
+        final_answer = None
 
-        # -------------------------
-        # TOOL CALL(S)
-        # -------------------------
+        for _ in range(MAX_TOOL_ITERATIONS):
 
-        if message.tool_calls:
+            response = chat(messages, SCHEMAS)
+            message = response.choices[0].message
 
-            messages.append(message)
+            # -------------------------
+            # TOOL CALL(S) — execute, then loop back and ask again
+            # -------------------------
+            if message.tool_calls:
 
-            for tool_call in message.tool_calls:
-                tool_name = tool_call.function.name
+                messages.append(message)
 
-                try:
-                    arguments = json.loads(tool_call.function.arguments)
-                except json.JSONDecodeError:
-                    result = f"Error: model produced invalid arguments for {tool_name}"
+                for tool_call in message.tool_calls:
+                    tool_name = tool_call.function.name
+
+                    try:
+                        arguments = json.loads(tool_call.function.arguments)
+                    except json.JSONDecodeError:
+                        result = f"Error: model produced invalid arguments for {tool_name}"
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": result
+                        })
+                        continue
+
+                    print("\nTool Selected :", tool_name)
+                    print("Arguments     :", arguments)
+
+                    if tool_name not in TOOLS:
+                        result = f"Unknown tool: {tool_name}"
+                    else:
+                        try:
+                            result = TOOLS[tool_name](**arguments)
+                        except Exception as e:
+                            result = f"Tool {tool_name} failed: {e}"
+
+                    print("Tool Result   :", result)
+
                     messages.append({
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content": result
                     })
-                    continue
 
-                print("\nTool Selected :", tool_name)
-                print("Arguments     :", arguments)
+                refresh_system_prompt()
+                continue  # ask the model again — it may call more tools or finally answer
 
-                if tool_name not in TOOLS:
-                    result = f"Unknown tool: {tool_name}"
-                else:
-                    try:
-                        result = TOOLS[tool_name](**arguments)
-                    except Exception as e:
-                        result = f"Tool {tool_name} failed: {e}"
-
-                print("Tool Result   :", result)
-
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": result
-                })
-
-            refresh_system_prompt()
-
-            second_response = chat(messages, SCHEMAS)
-            final_answer = second_response.choices[0].message.content
-
+            # -------------------------
+            # FINAL TEXT ANSWER — loop ends here
+            # -------------------------
+            final_answer = message.content
             messages.append({
                 "role": "assistant",
                 "content": final_answer
             })
+            break
 
-            self._run_memory_extraction(text, final_answer)
-            return final_answer
+        if final_answer is None:
+            final_answer = "(Stopped after several tool calls without a final answer — check the console log above.)"
+            messages.append({"role": "assistant", "content": final_answer})
 
-        # -------------------------
-        # NORMAL RESPONSE
-        # -------------------------
-
-        answer = message.content
-
-        messages.append({
-            "role": "assistant",
-            "content": answer
-        })
-
-        self._run_memory_extraction(text, answer)
-        return answer
+        self._run_memory_extraction(text, final_answer)
+        return final_answer
 
     def _run_memory_extraction(self, user_text, assistant_text):
-        """
-        Background safety net: even if the model didn't call remember_this
-        inline, this catches lasting facts and saves them anyway.
-        """
         facts = extract_facts(user_text, assistant_text)
 
         if facts:
