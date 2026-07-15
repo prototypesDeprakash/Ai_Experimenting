@@ -1,261 +1,275 @@
-# from agent import Agent
-
-# agent = Agent()
-# print("AI Agent")
-# while True:
-
-#     text = input("You: ")
-#     if text.lower() == "exit":
-#         break
-#     print("\nAI:", agent.handle_message(text), "\n")
-
 import threading
 import queue
 from customtkinter import *
 from agent import Agent
 
-# -----------------------------
-# Create Agent
-# -----------------------------
+# =====================================================
+#  AGENT
+# =====================================================
 agent = Agent()
-
-# Thread-safe queue
 response_queue = queue.Queue()
 
-# -----------------------------
-# App
-# -----------------------------
+# =====================================================
+#  MODERN "ASSISTANT" PALETTE (Claude / ChatGPT inspired)
+# =====================================================
+BG          = "#212121"   # main app background
+PANEL       = "#1a1a1a"   # header / input bar
+CHAT_BG     = "#212121"   # chat scroll area
+BORDER      = "#2f2f2f"   # subtle hairline borders
+
+BUBBLE_AI   = "#2f2f2f"   # neutral grey assistant bubble
+BUBBLE_USER = "#c96442"   # warm terracotta user bubble (Claude accent)
+
+TEXT_PRIMARY   = "#ececec"
+TEXT_ON_ACCENT = "#ffffff"
+TEXT_MUTED     = "#8e8ea0"
+
+ACCENT      = "#c96442"   # terracotta accent (buttons, status, avatar)
+ACCENT_HOVER = "#b5573a"
+GREEN_DOT   = "#4fd37b"
+
+FONT_HEAD   = ("Segoe UI Semibold", 18)
+FONT_SUB    = ("Segoe UI", 11)
+FONT_MSG    = ("Segoe UI", 13)
+FONT_TAG    = ("Segoe UI Semibold", 11)
+FONT_INPUT  = ("Segoe UI", 13)
+FONT_SMALL  = ("Segoe UI", 10)
+
+set_appearance_mode("dark")
+
+# =====================================================
+#  APP SHELL
+# =====================================================
 app = CTk()
-app.geometry("900x650")
-app.title("AI Agent")
-app.resizable(False, False)
-set_appearance_mode("System")
-
-# -----------------------------
-# Theme
-# -----------------------------
-BG = "#121212"
-FRAME = "#1B1B1B"
-HEADER = "#181818"
-
-ACCENT = "#E53935"
-TEXT = "#F5F5F5"
-
-BUTTON = "#E53935"
-BUTTON_HOVER = "#C62828"
-
-GREY = "#222222"
-
+app.geometry("880x680")
+app.minsize(700, 520)
+app.title("AI Assistant")
 app.configure(fg_color=BG)
 
-# -----------------------------
-# Layout
-# -----------------------------
+# ---- Header -----------------------------------------
+header = CTkFrame(app, fg_color=PANEL, height=64, corner_radius=0)
+header.pack(fill="x")
+header.pack_propagate(False)
 
-header = CTkFrame(app, fg_color=HEADER,
-                  border_color=ACCENT,
-                  border_width=1)
-header.pack(fill="x", padx=20, pady=10)
+title_wrap = CTkFrame(header, fg_color="transparent")
+title_wrap.pack(side="left", padx=20)
 
-chat_frame = CTkFrame(app,
-                      fg_color=FRAME,
-                      border_color=ACCENT,
-                      border_width=1)
-
-chat_frame.pack(fill="both", expand=True, padx=20)
-
-input_frame = CTkFrame(app,
-                       fg_color=FRAME,
-                       border_color=ACCENT,
-                       border_width=1)
-
-input_frame.pack(fill="x", padx=20, pady=10)
-
-# -----------------------------
-# Title
-# -----------------------------
-
-CTkLabel(
-    header,
-    text="AI Agent",
-    font=("Consolas", 22, "bold"),
-    text_color=ACCENT
-).pack(pady=10)
-
-# -----------------------------
-# Chat Box
-# -----------------------------
-
-chat_box = CTkTextbox(
-    chat_frame,
-    fg_color=GREY,
-    border_color=ACCENT,
-    border_width=1,
-    text_color="#1aff00",
-    font=("Consolas", 14),
-    wrap="word"
+avatar = CTkLabel(
+    title_wrap, text="AI", width=36, height=36, corner_radius=18,
+    fg_color=ACCENT, text_color=TEXT_ON_ACCENT, font=("Segoe UI Semibold", 13)
 )
+avatar.grid(row=0, column=0, rowspan=2, padx=(0, 10))
 
-chat_box.pack(fill="both", expand=True, padx=15, pady=15)
-chat_box.configure(state="disabled")
+CTkLabel(title_wrap, text="AI Assistant", font=FONT_HEAD,
+         text_color=TEXT_PRIMARY).grid(row=0, column=1, sticky="w")
 
-# -----------------------------
-# Input
-# -----------------------------
+status_wrap = CTkFrame(title_wrap, fg_color="transparent")
+status_wrap.grid(row=1, column=1, sticky="w")
+CTkLabel(status_wrap, text="●", font=("Segoe UI", 9), text_color=GREEN_DOT).pack(side="left")
+status_label = CTkLabel(status_wrap, text=" Online", font=FONT_SUB, text_color=TEXT_MUTED)
+status_label.pack(side="left")
+
+# ---- Chat scroll area --------------------------------
+chat_frame = CTkScrollableFrame(
+    app,
+    fg_color=CHAT_BG,
+    scrollbar_button_color=BORDER,
+    scrollbar_button_hover_color=ACCENT,
+)
+chat_frame.pack(fill="both", expand=True, padx=0, pady=0)
+chat_frame.grid_columnconfigure(0, weight=1)
+
+# ---- Input bar ----------------------------------------
+input_frame = CTkFrame(app, fg_color=PANEL, corner_radius=0, height=84)
+input_frame.pack(fill="x")
+input_frame.pack_propagate(False)
+
+input_inner = CTkFrame(input_frame, fg_color=BUBBLE_AI, corner_radius=22, border_color=BORDER, border_width=1)
+input_inner.pack(fill="x", padx=20, pady=18)
 
 message_entry = CTkEntry(
-    input_frame,
-    placeholder_text="Type your message...",
-    height=45,
-    fg_color=FRAME,
-    border_color=ACCENT,
-    border_width=1,
-    text_color=TEXT,
-    font=("Consolas", 14)
+    input_inner,
+    placeholder_text="Message AI Assistant...",
+    placeholder_text_color=TEXT_MUTED,
+    height=44,
+    fg_color="transparent",
+    border_width=0,
+    text_color=TEXT_PRIMARY,
+    font=FONT_INPUT,
 )
-
-message_entry.pack(
-    side="left",
-    fill="x",
-    expand=True,
-    padx=(10, 10),
-    pady=10
-)
-
-# -----------------------------
-# Send Button
-# -----------------------------
+message_entry.pack(side="left", fill="x", expand=True, padx=(16, 6))
 
 send_button = CTkButton(
-    input_frame,
-    text="SEND",
-    width=120,
-    height=45,
-    fg_color=BUTTON,
-    hover_color=BUTTON_HOVER,
-    text_color="white",
-    font=("Consolas", 15, "bold")
+    input_inner,
+    text="Send",
+    width=80,
+    height=34,
+    corner_radius=17,
+    fg_color=ACCENT,
+    hover_color=ACCENT_HOVER,
+    text_color=TEXT_ON_ACCENT,
+    font=("Segoe UI Semibold", 13),
 )
+send_button.pack(side="right", padx=(0, 8), pady=5)
 
-send_button.pack(side="right", padx=(0, 10), pady=10)
+# =====================================================
+#  CHAT BUBBLE HELPERS
+# =====================================================
+row_index = 0
+thinking_row = None
 
 
-# -----------------------------
-# Chat Helpers
-# -----------------------------
+def _scroll_to_bottom():
+    app.update_idletasks()
+    chat_frame._parent_canvas.yview_moveto(1.0)
 
-thinking_line = None
+
+def copy_to_clipboard(text, button):
+    app.clipboard_clear()
+    app.clipboard_append(text)
+    app.update()
+
+    original = button.cget("text")
+    button.configure(text="Copied!", text_color=GREEN_DOT)
+    app.after(1500, lambda: button.configure(text=original, text_color=TEXT_MUTED))
+
+
+def add_bubble(message, is_user):
+    """Creates one chat-bubble row. Returns (row_frame, message_label)."""
+    global row_index
+
+    row = CTkFrame(chat_frame, fg_color="transparent")
+    row.grid(row=row_index, column=0, sticky="ew", pady=8, padx=24)
+    row.grid_columnconfigure(0, weight=1)
+    row_index += 1
+
+    bubble_bg = BUBBLE_USER if is_user else BUBBLE_AI
+    text_color = TEXT_ON_ACCENT if is_user else TEXT_PRIMARY
+    anchor_side = "e" if is_user else "w"
+    tag_text = "You" if is_user else "AI Assistant"
+
+    bubble_wrap = CTkFrame(row, fg_color="transparent")
+    bubble_wrap.grid(row=0, column=0, sticky=anchor_side)
+
+    CTkLabel(bubble_wrap, text=tag_text, font=FONT_TAG,
+             text_color=TEXT_MUTED).pack(anchor=anchor_side, padx=6, pady=(0, 3))
+
+    bubble = CTkFrame(
+        bubble_wrap,
+        fg_color=bubble_bg,
+        corner_radius=16,
+    )
+    bubble.pack(anchor=anchor_side)
+
+    msg_label = CTkLabel(
+        bubble,
+        text=message,
+        font=FONT_MSG,
+        text_color=text_color,
+        wraplength=520,
+        justify="left",
+        anchor="w",
+    )
+    msg_label.pack(padx=16, pady=(12, 6 if not is_user else 12))
+
+    # Copy button only on assistant messages
+    if not is_user:
+        copy_btn = CTkButton(
+            bubble,
+            text="⧉ Copy",
+            width=60,
+            height=22,
+            corner_radius=6,
+            fg_color="transparent",
+            hover_color=BORDER,
+            text_color=TEXT_MUTED,
+            font=FONT_SMALL,
+        )
+        copy_btn.configure(command=lambda: copy_to_clipboard(message, copy_btn))
+        copy_btn.pack(anchor="w", padx=10, pady=(0, 8))
+
+    _scroll_to_bottom()
+    return row, msg_label
 
 
 def add_message(sender, message):
-
-    chat_box.configure(state="normal")
-    chat_box.insert("end", f"{sender}: {message}\n\n")
-    chat_box.configure(state="disabled")
-    chat_box.see("end")
+    add_bubble(message, is_user=(sender.lower() == "you"))
 
 
 def add_thinking():
+    global thinking_row
+    thinking_row, label = add_bubble("Thinking", is_user=False)
+    _animate_thinking(label, 0)
 
-    global thinking_line
 
-    chat_box.configure(state="normal")
-
-    thinking_line = chat_box.index("end-1c")
-
-    chat_box.insert("end", "AI: Thinking...\n\n")
-
-    chat_box.configure(state="disabled")
-    chat_box.see("end")
+def _animate_thinking(label, step):
+    if thinking_row is None or not thinking_row.winfo_exists():
+        return
+    dots = "." * (step % 4)
+    try:
+        label.configure(text=f"Thinking{dots}")
+    except Exception:
+        return
+    app.after(400, lambda: _animate_thinking(label, step + 1))
 
 
 def replace_thinking(response):
-
-    global thinking_line
-
-    chat_box.configure(state="normal")
-
-    start = thinking_line
-    end = chat_box.index(f"{thinking_line} +2 lines")
-
-    chat_box.delete(start, end)
-
-    chat_box.insert(start, f"AI: {response}\n\n")
-
-    chat_box.configure(state="disabled")
-    chat_box.see("end")
+    global thinking_row
+    if thinking_row is not None and thinking_row.winfo_exists():
+        thinking_row.destroy()
+        thinking_row = None
+    add_bubble(response, is_user=False)
 
 
-# -----------------------------
-# Worker Thread
-# -----------------------------
-
+# =====================================================
+#  WORKER THREAD
+# =====================================================
 def generate_response(text):
-
     try:
         response = agent.handle_message(text)
     except Exception as e:
-        response = str(e)
-
+        response = f"Error: {e}"
     response_queue.put(response)
 
 
-# -----------------------------
-# Poll Queue
-# -----------------------------
-
 def check_queue():
-
     try:
         response = response_queue.get_nowait()
         replace_thinking(response)
         send_button.configure(state="normal")
         message_entry.configure(state="normal")
+        status_label.configure(text=" Online")
         message_entry.focus()
-
     except queue.Empty:
         pass
 
     app.after(100, check_queue)
 
 
-# -----------------------------
-# Send Message
-# -----------------------------
-
 def send_message(event=None):
-
     text = message_entry.get().strip()
-
     if not text:
         return
 
     add_message("You", text)
-
     message_entry.delete(0, END)
 
+    status_label.configure(text=" Thinking...")
     add_thinking()
 
     send_button.configure(state="disabled")
     message_entry.configure(state="disabled")
 
-    threading.Thread(
-        target=generate_response,
-        args=(text,),
-        daemon=True
-    ).start()
+    threading.Thread(target=generate_response, args=(text,), daemon=True).start()
 
 
 send_button.configure(command=send_message)
-
 message_entry.bind("<Return>", send_message)
 
-# -----------------------------
-# Welcome
-# -----------------------------
-
-add_message("AI", "Hello! How can I help you?")
+# =====================================================
+#  WELCOME
+# =====================================================
+add_message("AI", "Hello! How can I help you today?")
 
 check_queue()
-
 app.mainloop()

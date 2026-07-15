@@ -62,7 +62,7 @@ def get_memory_block():
     Returns a formatted block of all memories, ready to inject into a
     system prompt. Empty string if there's nothing stored yet.
     """
-    facts = get_all_memories()
+    facts = get_all_memories()[-30:]  # cap so the prompt doesn't grow forever
 
     if not facts:
         return ""

@@ -49,19 +49,7 @@ schema = {
     "type": "function",
     "function": {
         "name": "open_software",
-        "description": f"""
-Open one of the supported software applications installed on the computer.
-
-Supported applications:
-{supported_apps}
-
-Always choose the closest matching supported application name.
-For example:
-- "File Explorer" -> "explorer"
-- "Google Chrome" -> "chrome"
-- "Calculator" -> "calculator"
-- "Command Prompt" -> "cmd"
-""",
+       "description": "Open a supported desktop application by name (e.g. 'chrome', 'notepad', 'explorer', 'cmd', 'calculator', 'spotify', 'blender'). Pick the closest matching name.",
         "parameters": {
             "type": "object",
             "properties": {

@@ -4,6 +4,7 @@ from memory import messages, refresh_system_prompt
 from llm import chat, extract_facts
 from tool_registry import TOOLS, SCHEMAS
 import memory_store
+import threading
 
 MAX_TOOL_ITERATIONS = 8  # safety cap so a confused model can't loop forever
 
@@ -29,7 +30,7 @@ class Agent:
             # -------------------------
             if message.tool_calls:
 
-                messages.append(message)
+                messages.append(message.model_dump(exclude_unset=True))
 
                 for tool_call in message.tool_calls:
                     tool_name = tool_call.function.name
@@ -81,7 +82,11 @@ class Agent:
             final_answer = "(Stopped after several tool calls without a final answer — check the console log above.)"
             messages.append({"role": "assistant", "content": final_answer})
 
-        self._run_memory_extraction(text, final_answer)
+        threading.Thread(
+            target=self._run_memory_extraction,
+            args=(text, final_answer),
+            daemon=True
+        ).start()
         return final_answer
 
     def _run_memory_extraction(self, user_text, assistant_text):

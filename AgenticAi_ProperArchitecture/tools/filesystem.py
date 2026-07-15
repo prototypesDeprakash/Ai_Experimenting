@@ -1,6 +1,6 @@
 import os
 import shutil
-
+from pypdf import PdfReader
 # -------------------------------------------------
 # NOTE: each tool below follows the same pattern as
 # software.py — a `schema` dict + an `execute()` fn.
@@ -74,11 +74,14 @@ read_file_schema = {
         }
     }
 }
-
+BINARY_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".png", ".jpg", ".jpeg", ".exe", ".zip"}
 def read_file(path):
     if not os.path.isfile(path):
         return f"File not found: {path}"
 
+    ext = os.path.splitext(path)[1].lower()
+    if ext in BINARY_EXTENSIONS:
+        return f"'{path}' is a binary file and can't be read as text. Use read_pdf for PDFs."
     try:
         with open(path, "r", encoding="utf-8", errors="replace") as f:
             content = f.read(MAX_READ_CHARS + 1)
@@ -248,6 +251,46 @@ def delete_file(path):
         return f"Failed to delete {path}: {e}"
 
 
+
+MAX_PDF_CHARS = 6000  # keep well under your context window
+
+read_pdf_schema = {
+    "type": "function",
+    "function": {
+        "name": "read_pdf",
+        "description": "Extract and read the text content of a PDF file.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Full path to the PDF file."}
+            },
+            "required": ["path"]
+        }
+    }
+}
+
+def read_pdf(path):
+    if not os.path.isfile(path):
+        return f"File not found: {path}"
+    if not path.lower().endswith(".pdf"):
+        return f"Not a PDF file: {path}"
+
+    try:
+        reader = PdfReader(path)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
+
+        if not text.strip():
+            return "No extractable text found (this may be a scanned/image-based PDF)."
+
+        if len(text) > MAX_PDF_CHARS:
+            text = text[:MAX_PDF_CHARS] + "\n...[truncated — file is longer]"
+
+        return text
+
+    except Exception as e:
+        return f"Failed to read PDF {path}: {e}"
 # =================================================
 # 8. list_directory
 # =================================================
@@ -299,4 +342,5 @@ TOOLS_IN_MODULE = {
     "rename_file": (rename_file_schema, rename_file),
     "delete_file": (delete_file_schema, delete_file),
     "list_directory": (list_directory_schema, list_directory),
+       "read_pdf": (read_pdf_schema, read_pdf)
 }
