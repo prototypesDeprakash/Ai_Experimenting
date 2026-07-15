@@ -2,7 +2,8 @@ import threading
 import queue
 from customtkinter import *
 from agent import Agent
-
+from speaker import speak
+import re
 # =====================================================
 #  AGENT
 # =====================================================
@@ -18,14 +19,14 @@ CHAT_BG     = "#212121"   # chat scroll area
 BORDER      = "#2f2f2f"   # subtle hairline borders
 
 BUBBLE_AI   = "#2f2f2f"   # neutral grey assistant bubble
-BUBBLE_USER = "#c96442"   # warm terracotta user bubble (Claude accent)
+BUBBLE_USER = "#ff4000"   # warm terracotta user bubble (Claude accent)
 
 TEXT_PRIMARY   = "#ececec"
 TEXT_ON_ACCENT = "#ffffff"
 TEXT_MUTED     = "#8e8ea0"
 
-ACCENT      = "#c96442"   # terracotta accent (buttons, status, avatar)
-ACCENT_HOVER = "#b5573a"
+ACCENT      = "#ff4000"   # terracotta accent (buttons, status, avatar)
+ACCENT_HOVER = "#751b00"
 GREEN_DOT   = "#4fd37b"
 
 FONT_HEAD   = ("Segoe UI Semibold", 18)
@@ -60,7 +61,7 @@ avatar = CTkLabel(
 )
 avatar.grid(row=0, column=0, rowspan=2, padx=(0, 10))
 
-CTkLabel(title_wrap, text="AI Assistant", font=FONT_HEAD,
+CTkLabel(title_wrap, text="Iris", font=FONT_HEAD,
          text_color=TEXT_PRIMARY).grid(row=0, column=1, sticky="w")
 
 status_wrap = CTkFrame(title_wrap, fg_color="transparent")
@@ -89,7 +90,7 @@ input_inner.pack(fill="x", padx=20, pady=18)
 
 message_entry = CTkEntry(
     input_inner,
-    placeholder_text="Message AI Assistant...",
+    placeholder_text="Talk to Iris...",
     placeholder_text_color=TEXT_MUTED,
     height=44,
     fg_color="transparent",
@@ -146,7 +147,7 @@ def add_bubble(message, is_user):
     bubble_bg = BUBBLE_USER if is_user else BUBBLE_AI
     text_color = TEXT_ON_ACCENT if is_user else TEXT_PRIMARY
     anchor_side = "e" if is_user else "w"
-    tag_text = "You" if is_user else "AI Assistant"
+    tag_text = "You" if is_user else "Iris"
 
     bubble_wrap = CTkFrame(row, fg_color="transparent")
     bubble_wrap.grid(row=0, column=0, sticky=anchor_side)
@@ -231,11 +232,19 @@ def generate_response(text):
         response = f"Error: {e}"
     response_queue.put(response)
 
+def clean_text(text):
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    text = re.sub(r"`", "", text)
+    text = re.sub(r"#+", "", text)
+    return text.strip()
 
 def check_queue():
     try:
         response = response_queue.get_nowait()
         replace_thinking(response)
+        # Speak the AI response
+        speak(clean_text(response))
+
         send_button.configure(state="normal")
         message_entry.configure(state="normal")
         status_label.configure(text=" Online")
@@ -269,7 +278,7 @@ message_entry.bind("<Return>", send_message)
 # =====================================================
 #  WELCOME
 # =====================================================
-add_message("AI", "Hello! How can I help you today?")
+add_message("Iris", "Hello! How can I help you today?")
 
 check_queue()
 app.mainloop()
