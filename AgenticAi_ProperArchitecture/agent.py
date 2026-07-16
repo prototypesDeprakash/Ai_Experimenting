@@ -18,6 +18,11 @@ class Agent:
             "content": text
         })
 
+        # RAG step: refresh the system prompt now, using this message as
+        # the search query, so only relevant memories are in context for
+        # this turn (instead of a static dump of the last 30 facts).
+        refresh_system_prompt(text)
+
         final_answer = None
 
         for _ in range(MAX_TOOL_ITERATIONS):
@@ -65,7 +70,7 @@ class Agent:
                         "content": result
                     })
 
-                refresh_system_prompt()
+                refresh_system_prompt(text)
                 continue  # ask the model again — it may call more tools or finally answer
 
             # -------------------------
@@ -96,4 +101,4 @@ class Agent:
             for fact in facts:
                 result = memory_store.add_memory(fact)
                 print("Auto-remembered:", result)
-            refresh_system_prompt()
+            refresh_system_prompt(user_text)

@@ -13,10 +13,25 @@ it in your reply — actually call the tool.
 If no tool is needed, answer normally.
 """
 
-def build_system_prompt():
+def build_system_prompt(user_text=""):
     """
-    Builds the system prompt fresh each time — includes whatever is
-    currently in long-term memory, so it reflects deletions/additions
-    made mid-session too.
+    Builds the system prompt fresh each time.
+
+    If user_text is given, we only inject memories that are relevant to
+    that message (RAG-style retrieval) instead of dumping every stored
+    fact. If user_text is empty (e.g. on first startup, before the user
+    has said anything), we fall back to no memories at all — there's no
+    query to search with yet.
     """
-    return BASE_PROMPT + memory_store.get_memory_block()
+    if not user_text:
+        return BASE_PROMPT
+
+    relevant_facts = memory_store.get_relevant_memories(user_text)
+
+    if not relevant_facts:
+        return BASE_PROMPT
+
+    bullet_list = "\n".join(f"- {fact}" for fact in relevant_facts)
+    memory_block = f"\n\nRelevant things you remember about the user:\n{bullet_list}\n"
+
+    return BASE_PROMPT + memory_block
