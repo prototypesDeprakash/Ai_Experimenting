@@ -4,15 +4,11 @@ from customtkinter import *
 from agent import Agent
 from speaker import speak
 import re
-# =====================================================
-#  AGENT
-# =====================================================
+
 agent = Agent()
 response_queue = queue.Queue()
 
-# =====================================================
-#  MODERN "ASSISTANT" PALETTE (Claude / ChatGPT inspired)
-# =====================================================
+
 BG          = "#212121"   # main app background
 PANEL       = "#1a1a1a"   # header / input bar
 CHAT_BG     = "#212121"   # chat scroll area
@@ -38,9 +34,7 @@ FONT_SMALL  = ("Segoe UI", 10)
 
 set_appearance_mode("dark")
 
-# =====================================================
-#  APP SHELL
-# =====================================================
+
 app = CTk()
 app.geometry("880x680")
 app.minsize(700, 520)
