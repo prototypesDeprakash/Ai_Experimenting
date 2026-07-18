@@ -1,6 +1,7 @@
 import os
 import shutil
 from pypdf import PdfReader
+import pdf_index
 # -------------------------------------------------
 # NOTE: each tool below follows the same pattern as
 # software.py — a `schema` dict + an `execute()` fn.
@@ -291,6 +292,35 @@ def read_pdf(path):
 
     except Exception as e:
         return f"Failed to read PDF {path}: {e}"
+
+
+# =================================================
+# 9. index_pdf_knowledge
+# =================================================
+
+index_pdf_knowledge_schema = {
+    "type": "function",
+    "function": {
+        "name": "index_pdf_knowledge",
+        "description": (
+            "Add a PDF to the assistant's searchable knowledge base, so its content "
+            "can be automatically recalled in future questions WITHOUT the user needing "
+            "to mention the file again. Use this the first time a PDF is introduced or "
+            "referenced, if it hasn't been added to the knowledge base yet. Only needs "
+            "to run once per PDF (re-run only if the file's content has changed)."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Full path to the PDF file."}
+            },
+            "required": ["path"]
+        }
+    }
+}
+
+def index_pdf_knowledge(path):
+    return pdf_index.index_pdf(path)
 # =================================================
 # 8. list_directory
 # =================================================
@@ -342,5 +372,6 @@ TOOLS_IN_MODULE = {
     "rename_file": (rename_file_schema, rename_file),
     "delete_file": (delete_file_schema, delete_file),
     "list_directory": (list_directory_schema, list_directory),
-       "read_pdf": (read_pdf_schema, read_pdf)
+    "read_pdf": (read_pdf_schema, read_pdf),
+    "index_pdf_knowledge": (index_pdf_knowledge_schema, index_pdf_knowledge)
 }
