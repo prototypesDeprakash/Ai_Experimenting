@@ -1,0 +1,24 @@
+# LLM client (talks to LM Studio's OpenAI-compatible server)
+openai>=1.30.0
+python-dotenv>=1.0.0
+
+# Desktop chat UI
+customtkinter>=5.2.0
+
+# Text-to-speech
+pyttsx3>=2.90
+
+# Process / application management (open_software, close_software, list_running_software)
+psutil>=5.9.0
+
+# PDF reading + indexing
+pypdf>=4.0.0
+
+# Embeddings for long-term memory + PDF semantic search
+sentence-transformers>=2.6.0
+numpy>=1.24.0
+
+# --- Windows-only ---
+# Required by speaker.py to init COM on the TTS worker thread (SAPI5 voices).
+# Safe to leave in requirements.txt — pip will simply skip installing it on non-Windows platforms.
+pywin32>=306; sys_platform == "win32"
